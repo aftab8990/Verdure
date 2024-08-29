@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ayurveda</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: black;
+    }
+
+    .kuula-embed-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background-color: black;
+    }
+
+    .kuula-embed-container iframe {
+      width: 100%;
+      height: calc(100% + 50px);
+      border: none;
+      position: absolute;
+      top: -50px;
+      left: 0;
+    }
+
+    .blur-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 3rem;
+      text-align: center;
+      z-index: 9999;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+      font-family: 'Dancing Script', cursive;
+    }
+
+    .blur-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      color: black;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 10px;
+      transition: transform 0.3s ease;
+      transform: translateY(-100%);
+      z-index: 10000;
+    }
+
+    .header.visible {
+      transform: translateY(0);
+    }
+
+    .header .logo {
+      font-size: 2rem;
+      font-family: 'Dancing Script', cursive;
+    }
+
+    .header .nav {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding-right: 20px;
+    }
+
+    .header .nav a {
+      color: black;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .header .filter-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .header .filter-toggle .dots {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-left: 10px;
+    }
+
+    .header .filter-toggle .dots div {
+      width: 4px;
+      height: 4px;
+      background: black;
+      border-radius: 50%;
+      margin: 1px 0;
+    }
+
+    .filter-panel {
+      position: fixed;
+      top: 40px;
+      left: -250px; /* Hide off-screen initially */
+      width: 200px;
+      height: 100vh;
+      background: white;
+      color: black;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      padding: 10px;
+      overflow-y: auto;
+      transition: left 0.3s ease;
+    }
+
+    .filter-panel.visible {
+      left: 0; /* Slide in from the left */
+    }
+
+    .filter-panel h2 {
+      font-size: 1.2rem;
+      margin: 0 0 10px;
+    }
+
+    .filter-panel label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+
+    .filter-panel input[type="checkbox"] {
+      margin-right: 10px;
+    }
+
+    .filter-panel .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .filter-panel .actions button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .filter-panel .actions .apply {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .filter-panel .actions .apply:hover {
+      background-color: #45a049;
+    }
+
+    .filter-panel .actions .cancel {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .filter-panel .actions .cancel:hover {
+      background-color: #e53935;
+    }
+
+    .search-bar {
+      visibility: hidden;
+      opacity: 0;
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, 0);
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 25px;
+      padding: 5px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 10000;
+      width: 80%;
+      max-width: 400px;
+      display: flex;
+      align-items: center;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .search-bar input {
+      width: calc(100% - 40px);
+      border: none;
+      padding: 5px;
+      font-size: 1rem;
+      border-radius: 25px;
+      background: transparent;
+    }
+
+    .search-bar input:focus {
+      outline: none;
+    }
+
+    .search-icon {
+      width: 30px;
+      height: 30px;
+      background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Magnifying_glass_icon.svg/768px-Magnifying_glass_icon.svg.png') no-repeat center;
+      background-size: contain;
+      cursor: pointer;
+    }
+
+    .blur-container {
+      visibility: hidden;
+      opacity: 0;
+      position: fixed;
+      top: 35%;
+      left: 50%;
+      transform: translate(-50%, 0);
+      width: 80%;
+      max-width: 400px;
+      height: 320px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(0px);
+      border-radius: 25px;
+      z-index: 9999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .blur-bar {
+      position: fixed;
+      bottom: 60px; /* Adjust to make it just below the container */
+      left: 570px;
+      width: 300px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(0px);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      border-radius: 25px;
+      z-index: 9998;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .blur-bar.visible {
+      transform: translateY(0);
+    }
+
+    .description-button {
+      position: fixed;
+      bottom: 60px; /* Align with the blur bar */
+      left: calc(570px + 300px + 3px); /* Position it 3px to the right of the blur bar */
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 25px;
+      color: black;
+      font-size: 1rem;
+      cursor: pointer;
+      z-index: 10000;
+      transition: background-color 0.3s ease;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .description-button.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .description-panel {
+      position: fixed;
+      bottom: 150px; /* Align with the button */
+      left: calc(570px + 300px + 140px); /* Start from the button */
+      width: 400px;
+      height: 320px;
+      border-radius: 25px;
+      background: white;
+      color: black;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      z-index: 10000;
+      padding: 20px;
+      overflow-y: auto;
+      transform: scale(0); /* Hide initially */
+      transform-origin: top left;
+      transition: transform 0.3s ease;
+    }
+
+    .description-panel.visible {
+      transform: scale(1); /* Show with animation */
+    }
+
+    .description-panel .close {
+      text-align: right;
+    }
+
+    .description-panel .close button {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .description-panel .content {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="kuula-embed-container">
+    <script src="https://static.kuula.io/embed.js" data-kuula="https://kuula.co/share/NrQ27?logo=1&info=1&fs=1&vr=0&zoom=1&sd=1&autorotate=0.17&thumbs=1&inst=0" data-width="1800px" data-height="900px"></script>
+  </div>
+  <div class="blur-container" id="blurContainer">
+    <img id="plantImage" src="" alt="Plant Image" style="width: 100%; height: auto;">
+  </div>
+  
+  <div class="blur-overlay" id="overlay">Ayurveda</div>
+
+  <div class="search-bar" id="searchBar">
+    <input type="text" id="searchInput" placeholder="Ask AI">
+    <div class="search-icon" id="searchIcon"></div>
+  </div>
+
+  <div class="blur-bar" id="blurBar"></div>
+  
+  <button class="description-button" id="descriptionButton">Description</button>
+
+  <div class="description-panel" id="descriptionPanel">
+    <div class="close">
+      <button id="closeDescriptionPanel">&times;</button>
+    </div>
+    <div class="content">
+      <h2>Description</h2>
+      <p>This panel provides additional information and descriptions about the content displayed. Use this area to convey more details to the users.</p>
+    </div>
+  </div>
+
+  <div class="header" id="header">
+    <div class="logo">Ayurveda</div>
+    <div class="nav">
+      <a href="#">Home</a>
+      <a href="#">Contact</a>
+      <a href="#">Help</a>
+       
+      <div class="filter-toggle">
+        <div class="dots" id="filterToggle">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-panel" id="filterPanel">
+    <h2>Filters</h2>
+    <label><input type="checkbox" name="filter" value="digestive"> Digestive Health</label>
+    <label><input type="checkbox" name="filter" value="immunity"> Immunity</label>
+    <label><input type="checkbox" name="filter" value="skin"> Skin Care</label>
+    <label><input type="checkbox" name="filter" value="hair"> Hair Care</label>
+    <label><input type="checkbox" name="filter" value="eye"> Eye Health</label>
+    <label><input type="checkbox" name="filter" value="respiratory"> Respiratory Health</label>
+    <label><input type="checkbox" name="filter" value="heart"> Heart Health</label>
+    <label><input type="checkbox" name="filter" value="reproductive"> Reproductive Health</label>
+    <label><input type="checkbox" name="filter" value="other"> Other Medical Issues</label>
+    
+    <div class="actions">
+      <button class="apply">Apply</button>
+      <button class="cancel">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('searchIcon').addEventListener('click', async function() {
+      const query = document.getElementById('searchInput').value;
+      if (!query.trim()) {
+        alert('Please enter a search term');
+        return;
+      }
+  
+      try {
+        const response = await fetch('/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: query })
+        });
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+  
+        const result = await response.json();
+  
+        if (result.error) {
+          document.getElementById('blurBar').innerText = `Error: ${result.error}`;
+          document.getElementById('plantImage').src = '';
+        } else {
+          document.getElementById('blurBar').innerText = result.name || 'No results found';
+          const plantImage = document.getElementById('plantImage');
+          plantImage.src = result.image || '';
+          plantImage.alt = result.name || 'Plant Image';
+        }
+      } catch (error) {
+        console.error('Error during fetch:', error);
+        document.getElementById('blurBar').innerText = 'Error occurred';
+        document.getElementById('plantImage').src = '';
+      }
+    });
+  
+    document.getElementById('overlay').addEventListener('click', function() {
+      this.classList.add('hidden');
+      document.getElementById('header').classList.add('visible');
+      document.getElementById('blurBar').classList.add('visible');
+      document.getElementById('descriptionButton').classList.add('visible'); // Show the description button
+
+      setTimeout(function() {
+        document.getElementById('searchBar').style.visibility = 'visible';
+        document.getElementById('searchBar').style.opacity = '1';
+        document.getElementById('blurContainer').style.visibility = 'visible';
+        document.getElementById('blurContainer').style.opacity = '1';
+      }, 300);
+    });
+
+    document.getElementById('filterToggle').addEventListener('click', function() {
+      const filterPanel = document.getElementById('filterPanel');
+      filterPanel.classList.toggle('visible');
+    });
+
+    document.querySelector('.filter-panel .apply').addEventListener('click', function() {
+      document.getElementById('filterPanel').classList.remove('visible');
+    });
+
+    document.querySelector('.filter-panel .cancel').addEventListener('click', function() {
+      document.getElementById('filterPanel').classList.remove('visible');
+    });
+
+    document.getElementById('descriptionButton').addEventListener('click', function() {
+      const descriptionPanel = document.getElementById('descriptionPanel');
+      descriptionPanel.classList.toggle('visible');
+    });
+
+    document.getElementById('closeDescriptionPanel').addEventListener('click', function() {
+      document.getElementById('descriptionPanel').classList.remove('visible');
+    });
+  </script>
+</body>
+</html>
